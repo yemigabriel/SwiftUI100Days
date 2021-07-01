@@ -64,9 +64,6 @@ struct ContentView: View {
             score += 10
         } else {
             scoreTitle = "Wrong! That’s the flag of \(countries[number])"
-            if score > 0 {
-                score -= 10
-            }
         }
         showingScore = true
     }
