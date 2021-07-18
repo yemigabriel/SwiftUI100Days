@@ -15,6 +15,8 @@ struct ContentView: View {
     @State private var scoreTitle = ""
     @State private var score = 0
     
+    @State private var rotationAmount = 0.0
+    
     var body: some View {
         ZStack {
             LinearGradient(gradient: Gradient(colors: [.blue, .black]), startPoint: .top, endPoint: .bottom)
@@ -31,9 +33,19 @@ struct ContentView: View {
                     ForEach(0 ..< 3) { number in
                         Button(action: {
                             self.flagTapped(number)
+                            withAnimation {
+                                if number == correctAnswer {
+                                    rotationAmount += 360
+                                }
+                            }
                         },
                         label: {
                             FlagImage(name: countries[number])
+                                .rotation3DEffect(
+                                    .degrees(rotationAmount),
+                                    axis: (x: 0.0, y: 1.0, z: 0.0)
+                                )
+//                                .opacity(number == correctAnswer ? 0.25 : 1)
                         })
                     }
                 }
@@ -78,11 +90,13 @@ struct ContentView_Previews: PreviewProvider {
 
 struct FlagImage: View {
     var name: String
+//    var correct = false
     var body: some View {
         Image(name)
             .renderingMode(.original)
             .clipShape(Capsule())
             .overlay(Capsule().stroke(Color.black, lineWidth: 1))
             .shadow(color: .black, radius: 2)
+//            .opacity(correct ? 1.0 : 0.25)
     }
 }
