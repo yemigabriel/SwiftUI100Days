@@ -6,8 +6,6 @@
 //
 
 import SwiftUI
-import ARKit
-import RealityKit
 
 class User: ObservableObject {
     @Published var firstname = "Natasha"
