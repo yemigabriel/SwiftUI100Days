@@ -7,109 +7,44 @@
 
 import SwiftUI
 
-class User: ObservableObject, Codable {
-    enum CodingKeys: CodingKey {
-        case name
-    }
-    @Published var name = "Paul Hudson"
-    
-    required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        name = try container.decode(String.self, forKey: .name)
-    }
-    
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(name, forKey: .name)
-    }
-}
-
-struct Response: Codable {
-    let results: [Result]
-}
-
-struct Result: Codable {
-    let trackId: Int
-    let trackName: String
-    let collectionName: String
-}
-
 struct ContentView: View {
-    @State private var results = [Result]()
-    @State private var username = ""
-    @State private var email = ""
-    var disableForm: Bool {
-        username.count < 5 || email.count < 5
-    }
-    
-    
+    @StateObject var order = Order()
     var body: some View {
-        VStack {
-            
+        NavigationView {
             Form {
                 Section {
-                    TextField("username", text: $username)
-                    TextField("email", text: $email, prompt: Text("emaiiil"))
+                    Picker("Select your cake type", selection: $order.type) {
+                        ForEach(Order.types.indices) {
+                            Text(Order.types[$0])
+                        }
+                        
+                    }
+                    
+                    Stepper("Number of cakes \(order.quantity)", value: $order.quantity, in: 3...20)
+                    
                 }
+                
                 Section {
-                    Button("Create account") {
-                        print("creating account")
+                    Toggle("Any special request", isOn: $order.specialRequestEnabled.animation())
+                    
+                    if order.specialRequestEnabled {
+                        Toggle("Add extra frosting", isOn: $order.extraFrosting)
+                        Toggle("Add extra sprinkles", isOn: $order.addSprinkles)
                     }
                 }
-                .disabled(disableForm)
-            }
-            
-            AsyncImage(url: URL(string: "https://hws.dev/img/logo.png")) { phase in
-                if let image = phase.image {
-                    image
-                        .resizable()
-                        .scaledToFit()
-                } else if phase.error != nil {
-                    Text("Error loading image")
-                } else {
-                    ProgressView()
+                
+                Section {
+                    NavigationLink {
+                        AddressView(order: order)
+                    } label: {
+                        Text("Delivery Details")
+                    }
                 }
             }
-            .frame(width: 200, height: 200)
-            
-            AsyncImage(url: URL(string: "https://hws.dev/img/logo.png")) { Image in
-                Image
-                    .resizable()
-                    .scaledToFit()
-            } placeholder: {
-                Color.red
-            }
-            .frame(width: 200, height: 200)
-            
-//            List(results, id: \.trackId) { item in
-//                VStack(alignment: .leading) {
-//                    Text(item.trackName)
-//                        .font(.headline)
-//
-//                    Text(item.collectionName)
-//
-//                }
-//            }
-//            .task {
-//                await loadData()
-//            }
+            .navigationBarTitle("Cupcake Corner", displayMode: .automatic)
         }
     }
     
-    func loadData() async {
-        guard let url = URL(string: "https://itunes.apple.com/search?term=burna+boy&entity=song") else {
-            print("Invalid URL")
-            return
-        }
-        do {
-            let (data, _) = try await URLSession.shared.data(from: url)
-            if let decodedResponse = try? JSONDecoder().decode(Response.self, from: data) {
-                results = decodedResponse.results
-            }
-        } catch  {
-            print("Invalid data")
-        }
-    }
 }
 
 struct ContentView_Previews: PreviewProvider {
