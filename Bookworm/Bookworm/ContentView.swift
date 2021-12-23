@@ -9,39 +9,67 @@ import SwiftUI
 
 
 struct ContentView: View {
-    @AppStorage("notes") private var notes = ""
     @Environment(\.managedObjectContext) var moc
-    @FetchRequest(sortDescriptors: []) var students: FetchedResults<Student>
+    @FetchRequest(sortDescriptors: [
+        SortDescriptor(\.title),
+        SortDescriptor(\.author)
+    ]) var books: FetchedResults<Book>
+    
+    @State private var showingAddScreen = false
     
     var body: some View {
         NavigationView {
             VStack {
-                List(students) { student in
-                    Text(student.name ?? "Unknown")
+                List {
+                    ForEach(books) { book in
+                        NavigationLink {
+                            DetailView(book: book)
+                        } label: {
+                            HStack {
+                                EmojiRatingView(rating: book.rating)
+                                    .font(.largeTitle)
+                                
+                                VStack (alignment: .leading) {
+                                    Text(book.title ?? "")
+                                        .font(.headline)
+                                    Text(book.author ?? "")
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                        }
+                    }
+                    .onDelete(perform: deleteBooks)
                 }
-                
-                Button("Add") {
-                    let firstNames = ["Ginny", "Harry", "Hermione", "Luna", "Ron"]
-                    let lastNames = ["Granger", "Potter", "Lovegood", "Weasley"]
-                    
-                    let chosenFirstName = firstNames.randomElement()!
-                    let chosenLastName = lastNames.randomElement()!
-                    
-                    let student = Student(context: moc)
-                    student.id = UUID()
-                    student.name = "\(chosenFirstName) \(chosenLastName)"
-                    
-                    do {
-                        try moc.save()
-                    } catch {
-                        
+            }
+            .navigationTitle("Bookworm")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showingAddScreen.toggle()
+                    } label: {
+                        Label("Add Book", systemImage: "plus")
                     }
                 }
-                
-                TextEditor(text: $notes)
-                    .navigationTitle("Notes")
+                ToolbarItem(placement: .navigationBarLeading) {
+                    EditButton()
+                }
             }
+            .sheet(isPresented: $showingAddScreen) {
+                // on dismiss
+                print("dismissed")
+            } content: {
+                AddBookView()
+            }
+
         }
+    }
+    
+    func deleteBooks(at offSets: IndexSet) {
+        for offset in offSets {
+            let book = books[offset]
+            moc.delete(book)
+        }
+        try? moc.save()
     }
 }
 
